@@ -95,7 +95,19 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    pg_ranks = {}  # dictionary that maps pages to their page ranks
+    curr_pg = random.choice(list(corpus.keys()))
+    # sample n pages and store the number of occurrences of each page in the sample
+    for _ in range(n):
+        distribution = transition_model(corpus, curr_pg, damping_factor)
+        curr_pg = random.choices(
+            list(distribution.keys()), weights=list(distribution.values())
+        )[0]
+        pg_ranks[curr_pg] = pg_ranks.get(curr_pg, 0) + 1
+    # calculate the page rank based on number of samples
+    for pg in pg_ranks:
+        pg_ranks[pg] /= n
+    return pg_ranks
 
 
 def iterate_pagerank(corpus, damping_factor):
