@@ -2,6 +2,7 @@ import os
 import random
 import re
 import sys
+from collections import defaultdict
 
 DAMPING = 0.85
 SAMPLES = 10000
@@ -95,7 +96,9 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    pg_ranks = {}  # dictionary that maps pages to their page ranks
+    pg_ranks = defaultdict(
+        lambda: 0
+    )  # dictionary that maps pages to their page ranks
     curr_pg = random.choice(list(corpus.keys()))
     # sample n pages and store the number of occurrences of each page in the sample
     for _ in range(n):
@@ -103,7 +106,7 @@ def sample_pagerank(corpus, damping_factor, n):
         curr_pg = random.choices(
             list(distribution.keys()), weights=list(distribution.values())
         )[0]
-        pg_ranks[curr_pg] = pg_ranks.get(curr_pg, 0) + 1
+        pg_ranks[curr_pg] = pg_ranks[curr_pg] + 1
     # calculate the page rank based on number of samples
     for pg in pg_ranks:
         pg_ranks[pg] /= n
@@ -119,7 +122,33 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    done = False
+    num_pgs = len(corpus)
+    pg_ranks = {key: 1 / num_pgs for key in corpus.keys()}
+    random_factor = 1 - damping_factor
+    random_probability = random_factor / num_pgs
+    # store the number of outgoing links for each pg
+    outgoing_counts = {}
+    for pg, links in corpus.items():
+        outgoing_counts[pg] = len(links)
+    # store the set of links that point to each page
+    source_links = defaultdict(lambda: set())
+    for pg in corpus:
+        for dest in corpus[pg]:
+            source_links[dest].add(pg)
+    while not done:
+        done = True
+        for pg in corpus:
+            curr_rank = pg_ranks[pg]
+            new_rank = random_probability
+            raw_source_sum = 0
+            for source in source_links[pg]:
+                raw_source_sum += (pg_ranks[source]) / (outgoing_counts[source])
+            new_rank += damping_factor * raw_source_sum
+            if abs(new_rank - curr_rank) > 0.001:
+                done = False
+            pg_ranks[pg] = new_rank
+    return pg_ranks
 
 
 if __name__ == "__main__":
